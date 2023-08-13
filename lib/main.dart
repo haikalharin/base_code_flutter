@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:base_mvvm/core/app_theme.dart';
 import 'package:base_mvvm/environment_config.dart';
-import 'package:base_mvvm/viewmodel/comment/bloc/comment_bloc.dart';
-import 'package:base_mvvm/viewmodel/post/bloc/post_bloc.dart';
-import 'package:base_mvvm/viewmodel/todo/bloc/todo_bloc.dart';
-import 'package:base_mvvm/viewmodel/user/bloc/user_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'di.dart';
-import 'view/user/screen/user_list_screen.dart';
+import 'view/user/screens/user_list_screen.dart';
+import 'viewmodel/comment/cubit/comment_cubit.dart';
+import 'viewmodel/post/cubit/post_cubit.dart';
+import 'viewmodel/todo/cubit/todo_cubit.dart';
+import 'viewmodel/user/cubit/user_cubit.dart';
 
 void main() async {
   runZonedGuarded<Future<void>>(() async {
@@ -31,10 +31,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<UserBloc>(create: (context) => getIt<UserBloc>()),
-        BlocProvider<TodoBloc>(create: (context) => getIt<TodoBloc>()),
-        BlocProvider<PostBloc>(create: (context) => getIt<PostBloc>()),
-        BlocProvider<CommentBloc>(create: (context) => getIt<CommentBloc>()),
+        BlocProvider<UserCubit>(create: (context) => getIt<UserCubit>()),
+        BlocProvider<TodoCubit>(create: (context) => getIt<TodoCubit>()),
+        BlocProvider<PostCubit>(create: (context) => getIt<PostCubit>()),
+        BlocProvider<CommentCubit>(create: (context) => getIt<CommentCubit>()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

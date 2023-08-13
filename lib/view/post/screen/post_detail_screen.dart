@@ -1,23 +1,22 @@
-import 'package:base_mvvm/view/post/screen/create_post_screen.dart';
-import 'package:base_mvvm/viewmodel/comment/bloc/comment_bloc.dart';
-import 'package:base_mvvm/viewmodel/comment/bloc/comment_event.dart';
-import 'package:base_mvvm/common/widget/spinkit_indicator.dart';
-import 'package:base_mvvm/common/bloc/generic_bloc_state.dart';
+import 'package:base_mvvm/common/cubit/generic_cubit.dart';
+import 'package:base_mvvm/common/cubit/generic_cubit_state.dart';
 import 'package:base_mvvm/common/dialog/progress_dialog.dart';
 import 'package:base_mvvm/common/dialog/retry_dialog.dart';
-import 'package:base_mvvm/data/model/comment/comment.dart';
 import 'package:base_mvvm/common/widget/empty_widget.dart';
+import 'package:base_mvvm/common/widget/spinkit_indicator.dart';
 import 'package:base_mvvm/common/widget/text_input.dart';
-import 'package:base_mvvm/common/bloc/bloc_helper.dart';
 import 'package:base_mvvm/core/app_asset.dart';
 import 'package:base_mvvm/core/app_extension.dart';
 import 'package:base_mvvm/core/app_style.dart';
 import 'package:base_mvvm/data/model/post/post.dart';
 import 'package:base_mvvm/data/model/user/user.dart';
-import 'package:base_mvvm/viewmodel/post/bloc/post_bloc.dart';
-import 'package:base_mvvm/viewmodel/post/bloc/post_event.dart';
+import 'package:base_mvvm/view/post/screen/create_post_screen.dart';
+import 'package:base_mvvm/viewmodel/comment/cubit/comment_cubit.dart';
+import 'package:base_mvvm/viewmodel/post/cubit/post_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
+
+import '../../../data/model/comment/comment.dart';
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({Key? key, required this.post, this.user})
@@ -47,7 +46,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   getUserComments() async {
-    context.read<CommentBloc>().add(CommentFetched(widget.post.id));
+    await context.read<CommentCubit>().getUserComments(widget.post.id);
   }
 
   PreferredSizeWidget _appBar(BuildContext context) {
@@ -106,13 +105,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Widget get commentItem {
     getUserComments();
-    return BlocBuilder<CommentBloc, GenericBlocState<Comment>>(
+    return BlocBuilder<CommentCubit, GenericCubitState<List<Comment>>>(
       buildWhen: (prevState, curState) {
-        return context.read<CommentBloc>().operation == ApiOperation.select
+        return context.read<CommentCubit>().operation == ApiOperation.select
             ? true
             : false;
       },
-      builder: (BuildContext context, GenericBlocState<Comment> state) {
+      builder: (BuildContext context, GenericCubitState<List<Comment>> state) {
         switch (state.status) {
           case Status.empty:
             return const EmptyWidget(message: "No comment");
@@ -144,7 +143,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             children: [
                               Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(comment.name, style: headLine5),
                                   IconButton(
@@ -176,12 +175,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   void deletePost(Post post) {
-    context.read<PostBloc>().add(PostDeleted(post));
+    context.read<PostCubit>().deletePost(post);
     showDialog(
       context: context,
       builder: (_) {
-        return BlocBuilder<PostBloc, GenericBlocState<Post>>(
-          builder: (BuildContext context, GenericBlocState<Post> state) {
+        return BlocBuilder<PostCubit, GenericCubitState<List<Post>>>(
+          builder: (BuildContext context, GenericCubitState<List<Post>> state) {
             switch (state.status) {
               case Status.empty:
                 return const SizedBox();
@@ -192,10 +191,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 );
               case Status.failure:
                 return RetryDialog(
-                  title: state.error ?? "Error",
-                  onRetryPressed: () =>
-                      context.read<PostBloc>().add(PostDeleted(post)),
-                );
+                    title: state.error ?? "Error",
+                    onRetryPressed: () =>
+                        context.read<PostCubit>().deletePost(post));
               case Status.success:
                 return ProgressDialog(
                   title: "Successfully deleted",
@@ -228,12 +226,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   void deleteComment(Comment comment) {
-    context.read<CommentBloc>().add(CommentDeleted(comment));
+    context.read<CommentCubit>().deleteComment(comment);
     showDialog(
       context: context,
       builder: (_) {
-        return BlocBuilder<CommentBloc, GenericBlocState<Comment>>(
-          builder: (BuildContext context, GenericBlocState<Comment> state) {
+        return BlocBuilder<CommentCubit, GenericCubitState<List<Comment>>>(
+          builder:
+              (BuildContext context, GenericCubitState<List<Comment>> state) {
             switch (state.status) {
               case Status.empty:
                 return const SizedBox();
@@ -244,13 +243,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 );
               case Status.failure:
                 return RetryDialog(
-                  title: state.error ?? "Error",
-                  onRetryPressed: () =>
-                      context.read<CommentBloc>().add(CommentDeleted(comment)),
-                );
+                    title: state.error ?? "Error",
+                    onRetryPressed: () =>
+                        context.read<CommentCubit>().deleteComment(comment));
               case Status.success:
                 WidgetsBinding.instance.addPostFrameCallback(
-                  (_) {
+                      (_) {
                     getUserComments();
                     Navigator.pop(context);
                     snackBar("Successfully deleted");
@@ -326,14 +324,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         body: commentBody,
                       );
 
-                      context.read<CommentBloc>().add(CommentCreated(comment));
+                      context.read<CommentCubit>().createComment(comment);
                       showDialog(
                         context: context,
                         builder: (_) {
-                          return BlocBuilder<CommentBloc,
-                              GenericBlocState<Comment>>(
+                          return BlocBuilder<CommentCubit,
+                              GenericCubitState<List<Comment>>>(
                             builder: (BuildContext context,
-                                GenericBlocState<Comment> state) {
+                                GenericCubitState<List<Comment>> state) {
                               switch (state.status) {
                                 case Status.empty:
                                   return const EmptyWidget(
@@ -348,13 +346,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                     title: state.error ?? "Error",
                                     onRetryPressed: () {
                                       context
-                                          .read<CommentBloc>()
-                                          .add(CommentCreated(comment));
+                                          .read<CommentCubit>()
+                                          .createComment(comment);
                                     },
                                   );
                                 case Status.success:
                                   WidgetsBinding.instance.addPostFrameCallback(
-                                    (_) {
+                                        (_) {
                                       nameEditingController.clear();
                                       commentBodyEditingController.clear();
                                       snackBar("Successfully created");

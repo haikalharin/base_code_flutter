@@ -1,18 +1,19 @@
-import 'package:base_mvvm/repository/comment/comment_repository.dart';
-import 'package:base_mvvm/viewmodel/comment/bloc/comment_bloc.dart';
-import 'package:base_mvvm/repository/post/post_repository.dart';
-import 'package:base_mvvm/repository/todo/todo_repository.dart';
-import 'package:base_mvvm/repository/user/user_repository.dart';
-import 'package:base_mvvm/viewmodel/post/bloc/post_bloc.dart';
-import 'package:base_mvvm/viewmodel/todo/bloc/todo_bloc.dart';
-import 'package:base_mvvm/viewmodel/user/bloc/user_bloc.dart';
-import 'package:base_mvvm/data/api/comment/comment_api.dart';
 import 'package:base_mvvm/common/network/dio_client.dart';
+import 'package:base_mvvm/data/api/comment/comment_api.dart';
 import 'package:base_mvvm/data/api/post/post_api.dart';
 import 'package:base_mvvm/data/api/todo/todo_api.dart';
 import 'package:base_mvvm/data/api/user/user_api.dart';
+import 'package:base_mvvm/repository/comment/comment_repository.dart';
+import 'package:base_mvvm/repository/post/post_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+
+import 'repository/todo/todo_repository.dart';
+import 'repository/user/user_repository.dart';
+import 'viewmodel/comment/cubit/comment_cubit.dart';
+import 'viewmodel/post/cubit/post_cubit.dart';
+import 'viewmodel/todo/cubit/todo_cubit.dart';
+import 'viewmodel/user/cubit/user_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -23,15 +24,15 @@ Future<void> init() async {
 
   // User api
   getIt.registerLazySingleton<UserApi>(
-          () => UserApi(dioClient: getIt<DioClient>()));
+      () => UserApi(dioClient: getIt<DioClient>()));
 
   // _Todo api
   getIt.registerLazySingleton<ToDoApi>(
-          () => ToDoApi(dioClient: getIt<DioClient>()));
+      () => ToDoApi(dioClient: getIt<DioClient>()));
 
   // Post api
   getIt.registerLazySingleton<PostApi>(
-          () => PostApi(dioClient: getIt<DioClient>()));
+      () => PostApi(dioClient: getIt<DioClient>()));
 
   // Comment api
   getIt.registerLazySingleton<CommentApi>(
@@ -49,22 +50,26 @@ Future<void> init() async {
 
   // Post repository
   getIt.registerLazySingleton<PostRepository>(
-        () => PostRepository(postApi: getIt<PostApi>()),
+    () => PostRepository(postApi: getIt<PostApi>()),
   );
   // Comment repository
   getIt.registerLazySingleton<CommentRepository>(
-        () => CommentRepository(commentApi: getIt<CommentApi>()),
+    () => CommentRepository(commentApi: getIt<CommentApi>()),
   );
 
   //User Bloc
-  getIt.registerFactory(() => UserBloc(userRepository: getIt<UserRepository>()));
+  getIt.registerFactory(
+      () => UserCubit(userRepository: getIt<UserRepository>()));
 
   //_Todo Bloc
-  getIt.registerFactory(() => TodoBloc(todoRepository: getIt<TodoRepository>()));
+  getIt.registerFactory(
+      () => TodoCubit(todoRepository: getIt<TodoRepository>()));
 
   //Post Bloc
-  getIt.registerFactory(() => PostBloc(postRepository: getIt<PostRepository>()));
+  getIt.registerFactory(
+      () => PostCubit(postRepository: getIt<PostRepository>()));
 
   //Comment Bloc
-  getIt.registerFactory(() => CommentBloc(commentRepository: getIt<CommentRepository>()));
+  getIt.registerFactory(
+      () => CommentCubit(commentRepository: getIt<CommentRepository>()));
 }

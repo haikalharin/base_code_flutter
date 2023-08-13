@@ -1,5 +1,5 @@
-import 'package:base_mvvm/common/bloc/bloc_helper.dart';
-import 'package:base_mvvm/common/bloc/generic_bloc_state.dart';
+import 'package:base_mvvm/common/cubit/generic_cubit.dart';
+import 'package:base_mvvm/common/cubit/generic_cubit_state.dart';
 import 'package:base_mvvm/common/dialog/create_dialog.dart';
 import 'package:base_mvvm/common/dialog/delete_dialog.dart';
 import 'package:base_mvvm/common/dialog/progress_dialog.dart';
@@ -12,9 +12,8 @@ import 'package:base_mvvm/core/app_style.dart';
 import 'package:base_mvvm/data/model/user/user.dart';
 import 'package:base_mvvm/view/post/screen/post_list_screen.dart';
 import 'package:base_mvvm/view/todo/screen/todo_list_screen.dart';
-import 'package:base_mvvm/view/user/widget/status_container.dart';
-import 'package:base_mvvm/viewmodel/user/bloc/user_bloc.dart';
-import 'package:base_mvvm/viewmodel/user/bloc/user_event.dart';
+import 'package:base_mvvm/view/user/widgets/status_container.dart';
+import 'package:base_mvvm/viewmodel/user/cubit/user_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -31,7 +30,7 @@ class _UserListScreenState extends State<UserListScreen> {
   PreferredSizeWidget get _appBar {
     return AppBar(
       leading: IconButton(
-        onPressed: () => context.read<UserBloc>().add(UsersFetched()),
+        onPressed: () => context.read<UserCubit>().getUserList(),
         icon: const Icon(Icons.refresh),
       ),
       actions: [
@@ -39,14 +38,14 @@ class _UserListScreenState extends State<UserListScreen> {
           icon: Icons.filter_list_outlined,
           items: UserStatus.values,
           onChanged: (UserStatus value) {
-            context.read<UserBloc>().add(UsersFetched(status: value));
+            context.read<UserCubit>().getUserList(status: value);
           },
         ),
         PopupMenu<Gender>(
           icon: Icons.filter_alt_outlined,
           items: Gender.values,
           onChanged: (Gender value) {
-            context.read<UserBloc>().add(UsersFetched(gender: value));
+            context.read<UserCubit>().getUserList(gender: value);
           },
         )
       ],
@@ -65,12 +64,13 @@ class _UserListScreenState extends State<UserListScreen> {
 
         if (isCreate) {
           if (!mounted) return;
-          context.read<UserBloc>().add(UserCreated(user));
+          context.read<UserCubit>().createUser(user);
           showDialog(
             context: context,
             builder: (_) {
-              return BlocBuilder<UserBloc, GenericBlocState<User>>(
-                builder: (BuildContext context, GenericBlocState<User> state) {
+              return BlocBuilder<UserCubit, GenericCubitState<List<User>>>(
+                builder: (BuildContext context,
+                    GenericCubitState<List<User>> state) {
                   switch (state.status) {
                     case Status.empty:
                       return const SizedBox();
@@ -83,13 +83,13 @@ class _UserListScreenState extends State<UserListScreen> {
                       return RetryDialog(
                         title: state.error ?? "Error",
                         onRetryPressed: () =>
-                            context.read<UserBloc>().add(UserCreated(user)),
+                            context.read<UserCubit>().createUser(user),
                       );
                     case Status.success:
                       return ProgressDialog(
                         title: "Successfully created",
                         onPressed: () {
-                          context.read<UserBloc>().add(UsersFetched());
+                          context.read<UserCubit>().getUserList();
                           Navigator.pop(context);
                         },
                         isProgressed: false,
@@ -153,12 +153,13 @@ class _UserListScreenState extends State<UserListScreen> {
     bool isAccepted = await deleteDialog(context);
     if (isAccepted) {
       if (!mounted) return;
-      context.read<UserBloc>().add(UserDeleted(user));
+      context.read<UserCubit>().deleteUser(user);
       showDialog(
         context: context,
         builder: (_) {
-          return BlocBuilder<UserBloc, GenericBlocState<User>>(
-            builder: (BuildContext context, GenericBlocState<User> state) {
+          return BlocBuilder<UserCubit, GenericCubitState<List<User>>>(
+            builder:
+                (BuildContext context, GenericCubitState<List<User>> state) {
               switch (state.status) {
                 case Status.empty:
                   return const SizedBox();
@@ -171,13 +172,13 @@ class _UserListScreenState extends State<UserListScreen> {
                   return RetryDialog(
                     title: state.error ?? "Error",
                     onRetryPressed: () =>
-                        context.read<UserBloc>().add(UserDeleted(user)),
+                        context.read<UserCubit>().deleteUser(user),
                   );
                 case Status.success:
                   return ProgressDialog(
                     title: "Successfully deleted",
                     onPressed: () {
-                      context.read<UserBloc>().add(UsersFetched());
+                      context.read<UserCubit>().getUserList();
                       Navigator.pop(context);
                     },
                     isProgressed: false,
@@ -203,12 +204,13 @@ class _UserListScreenState extends State<UserListScreen> {
 
     if (isUpdate) {
       if (!mounted) return;
-      context.read<UserBloc>().add(UserUpdated(userObj));
+      context.read<UserCubit>().updateUser(userObj);
       showDialog(
         context: context,
         builder: (_) {
-          return BlocBuilder<UserBloc, GenericBlocState<User>>(
-            builder: (BuildContext context, GenericBlocState<User> state) {
+          return BlocBuilder<UserCubit, GenericCubitState<List<User>>>(
+            builder:
+                (BuildContext context, GenericCubitState<List<User>> state) {
               switch (state.status) {
                 case Status.empty:
                   return const SizedBox();
@@ -221,13 +223,13 @@ class _UserListScreenState extends State<UserListScreen> {
                   return RetryDialog(
                     title: state.error ?? "Error",
                     onRetryPressed: () =>
-                        context.read<UserBloc>().add(UserUpdated(userObj)),
+                        context.read<UserCubit>().updateUser(userObj),
                   );
                 case Status.success:
                   return ProgressDialog(
                     title: "Successfully updated",
                     onPressed: () {
-                      context.read<UserBloc>().add(UsersFetched());
+                      context.read<UserCubit>().getUserList();
                       Navigator.pop(context);
                     },
                     isProgressed: false,
@@ -252,7 +254,7 @@ class _UserListScreenState extends State<UserListScreen> {
 
   @override
   void initState() {
-    BlocProvider.of<UserBloc>(context).add(UsersFetched());
+    BlocProvider.of<UserCubit>(context).getUserList();
     super.initState();
   }
 
@@ -261,13 +263,13 @@ class _UserListScreenState extends State<UserListScreen> {
     return Scaffold(
       floatingActionButton: floatingActionButton,
       appBar: _appBar,
-      body: BlocBuilder<UserBloc, GenericBlocState<User>>(
+      body: BlocBuilder<UserCubit, GenericCubitState<List<User>>>(
         buildWhen: (prevState, curState) {
-          return context.read<UserBloc>().operation == ApiOperation.select
+          return context.read<UserCubit>().operation == ApiOperation.select
               ? true
               : false;
         },
-        builder: (BuildContext context, GenericBlocState<User> state) {
+        builder: (BuildContext context, GenericCubitState<List<User>> state) {
           switch (state.status) {
             case Status.empty:
               return const EmptyWidget(message: "No user!");
@@ -275,9 +277,9 @@ class _UserListScreenState extends State<UserListScreen> {
               return const SpinKitIndicator(type: SpinKitType.circle);
             case Status.failure:
               return RetryDialog(
-                  title: state.error ?? "Error",
-                  onRetryPressed: () =>
-                      context.read<UserBloc>().add(UsersFetched()));
+                title: state.error ?? "Error",
+                onRetryPressed: () => context.read<UserCubit>().getUserList(),
+              );
             case Status.success:
               return ListView.builder(
                 shrinkWrap: true,

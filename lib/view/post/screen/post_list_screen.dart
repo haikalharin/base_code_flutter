@@ -1,17 +1,17 @@
-import 'package:base_mvvm/view/post/screen/create_post_screen.dart';
-import 'package:base_mvvm/common/widget/spinkit_indicator.dart';
-import 'package:base_mvvm/common/bloc/generic_bloc_state.dart';
+import 'package:base_mvvm/common/cubit/generic_cubit_state.dart';
 import 'package:base_mvvm/common/dialog/retry_dialog.dart';
 import 'package:base_mvvm/common/widget/empty_widget.dart';
+import 'package:base_mvvm/common/widget/spinkit_indicator.dart';
 import 'package:base_mvvm/core/app_extension.dart';
 import 'package:base_mvvm/core/app_style.dart';
 import 'package:base_mvvm/data/model/post/post.dart';
 import 'package:base_mvvm/data/model/user/user.dart';
-import 'package:base_mvvm/view/post/screen/post_detail_screen.dart';
-import 'package:base_mvvm/viewmodel/post/bloc/post_bloc.dart';
-import 'package:base_mvvm/viewmodel/post/bloc/post_event.dart';
+import 'package:base_mvvm/view/post/screen/create_post_screen.dart';
+import 'package:base_mvvm/viewmodel/post/cubit/post_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
+
+import 'post_detail_screen.dart';
 
 class PostListScreen extends StatefulWidget {
   const PostListScreen({Key? key, required this.user}) : super(key: key);
@@ -31,7 +31,7 @@ class _PostListScreenState extends State<PostListScreen> {
 
   getData() async {
     if (!mounted) return;
-    context.read<PostBloc>().add(PostFetched(widget.user));
+    context.read<PostCubit>().getPosts(widget.user);
   }
 
   PreferredSizeWidget get appBar {
@@ -83,9 +83,9 @@ class _PostListScreenState extends State<PostListScreen> {
                 const SizedBox(height: 5),
                 Builder(
                   builder: (context) {
-                    final postBloc = context.watch<PostBloc>();
+                    final postCubit = context.watch<PostCubit>();
                     return Text(
-                      postBloc.getPostCount,
+                      postCubit.getPostCount,
                       style: const TextStyle(
                           color: Colors.black54, fontWeight: FontWeight.w500),
                     );
@@ -173,8 +173,9 @@ class _PostListScreenState extends State<PostListScreen> {
             padding: EdgeInsets.only(left: 20, top: 15),
             child: Text("Posts", style: headLine1),
           ),
-          BlocBuilder<PostBloc, GenericBlocState<Post>>(
-            builder: (BuildContext context, GenericBlocState<Post> state) {
+          BlocBuilder<PostCubit, GenericCubitState<List<Post>>>(
+            builder:
+                (BuildContext context, GenericCubitState<List<Post>> state) {
               switch (state.status) {
                 case Status.empty:
                   return const EmptyWidget(message: "No post");
